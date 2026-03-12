@@ -233,4 +233,8 @@ def load_pickled_data(folder, language):
     for d in new_parsed_dicts.values():
         parsed_dict.update(d)
 
+    with open(folder + "/parsed_dict_" + language + ".pkl", "wb") as file:
+        # Dump data with highest protocol for best performance
+        pickle.dump(parsed_dict, file, protocol=pickle.HIGHEST_PROTOCOL)
+
     return parsed_dict
