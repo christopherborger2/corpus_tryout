@@ -9,6 +9,51 @@ nlp_ro = stanza.Pipeline("ro")
 SEP_en = "This is a splitting sentence."
 SEP_ro = "Asta este o propoziție."
 
+orthography_pairs = dict([("sînt", "sunt"), ("sîntem", "suntem")])
+
+prefixes = [
+    "bine",
+    "ne",
+    "re",
+    "pre",
+    "de",
+    "des",
+    "rău",
+    "prea",
+    "sub",
+    "supra",
+    "micro",
+    "nemai",
+    "auto",
+    "anti",
+    "agro",
+]
+
+
+def convert_word_to_new_orthography(word):
+    if word in orthography_pairs.keys():
+        return orthography_pairs[word]
+    for prefix in prefixes:
+        if word.startswith(prefix):
+            return word
+    word = re.sub(r"(?<=\w)î(?=\w)", "â", word)
+    word = re.sub(r"\bâ(?=\w)", "î", word)
+    word = re.sub(r"\bÂ(?=\w)", "Î", word)
+    word = re.sub(r"(?<=\w)â\b", "î", word)
+    word = re.sub(r"(?<=\w)Â\b", "Î", word)
+    return word
+
+
+def convert_sentence_to_new_orthography(sentence):
+    # Split into words, punctuation, and whitespace
+    tokens = re.findall(r"\s+|\w+|[^\w\s]", sentence, re.UNICODE)
+    converted_tokens = [
+        convert_word_to_new_orthography(t) if re.match(r"\w", t, re.UNICODE) else t
+        for t in tokens
+    ]
+    # Rejoin preserving whitespace
+    return "".join(converted_tokens)
+
 
 def get_doc(df_slice, column, model, sep):
     merged = f" {sep} ".join(df_slice[column].astype(str)) + sep
@@ -97,6 +142,7 @@ def sentences_contain_adv_part(matched_word, sentences):
 
 
 def sentences_contain_gerunziu(matched_word, sentences):
+    print(matched_word)
     for sentence in sentences:
         for word in sentence.words:
             if matched_word and not word.text == matched_word:
@@ -115,8 +161,7 @@ def is_adv_part(word, sentence):
     return (
         word.text[-3:] == "ing"
         and word.upos == "VERB"
-        and word.deprel
-        == "advcl"  # TODO: previously contained: or word.deprel == "conj"
+        and (word.deprel == "advcl" or word.deprel == "conj")
         and word_features["VerbForm"] == "Part"
         and not is_head_of_preposition(word, sentence)
         and not is_head_of_be(word, sentence)  # avoid progressive
@@ -125,13 +170,7 @@ def is_adv_part(word, sentence):
 
 def is_gerunziu(word):
     word_features = split_feats(word.feats)
-    return (
-        ("VerbForm" in word_features.keys() and word_features["VerbForm"] == "Ger")
-        or word.text
-        == "privind"  # somehow privind seems to never be classified as gerund
-        or word.text[-3:]
-        == "înd"  # somehow there seem to be a lot of gerunzius of this form to be excluded
-    )
+    return "VerbForm" in word_features.keys() and word_features["VerbForm"] == "Ger"
 
 
 def get_adv_part_in_sentences(sentences):
