@@ -165,23 +165,16 @@ def is_adv_part(word, sentence):
     return (
         word.text[-3:] == "ing"
         and word.upos == "VERB"
-        and (word.deprel == "advcl" or word.deprel == "conj")
+        and (
+            word.deprel == "advcl"
+            or (
+                word.deprel == "conj"
+                and get_word_by_id(word.head, sentence).deprel == "advcl"
+            )
+        )
         and word_features["VerbForm"] == "Part"
         and not is_head_of_preposition(word, sentence)
         and not is_head_of_be(word, sentence)  # avoid progressive
-        and not (
-            word.deprel == "conj"
-            and is_head_of_preposition(
-                get_word_by_id(
-                    word.head,
-                    sentence,
-                ),
-                sentence,
-            )  # avoid "running" in "in swimming and running"
-        )
-        and not (
-            word.deprel == "conj" and get_word_by_id(word.head, sentence).upos == "ADJ"
-        )
     )
 
 
