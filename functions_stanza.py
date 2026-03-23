@@ -155,6 +155,10 @@ def sentences_contain_gerunziu(matched_word, sentences):
     return (False, None)
 
 
+def get_word_by_id(id, sentence):
+    return sentence.words[id - 1]
+
+
 def is_adv_part(word, sentence):
 
     word_features = split_feats(word.feats)
@@ -165,6 +169,19 @@ def is_adv_part(word, sentence):
         and word_features["VerbForm"] == "Part"
         and not is_head_of_preposition(word, sentence)
         and not is_head_of_be(word, sentence)  # avoid progressive
+        and not (
+            word.deprel == "conj"
+            and is_head_of_preposition(
+                get_word_by_id(
+                    word.head,
+                    sentence,
+                ),
+                sentence,
+            )  # avoid "running" in "in swimming and running"
+        )
+        and not (
+            word.deprel == "conj" and get_word_by_id(word.head, sentence).upos == "ADJ"
+        )
     )
 
 
