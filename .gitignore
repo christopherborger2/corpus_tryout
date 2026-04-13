@@ -1,3 +1,4 @@
 *.csv
 *.pkl
 .venv
+__pycache__
