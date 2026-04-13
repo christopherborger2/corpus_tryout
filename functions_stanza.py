@@ -118,7 +118,9 @@ def is_head_of_be(word, sentence):
 
 
 def is_preposition(word):
-    return word.upos == "SCONJ" and word.xpos == "IN" and word.deprel == "mark"
+    return (word.upos == "SCONJ" and word.xpos == "IN" and word.deprel == "mark") or (
+        word.text == "instead"
+    )
 
 
 def is_head_of_preposition(word, sentence):
@@ -171,9 +173,16 @@ def is_adv_part(word, sentence):
                 word.deprel == "conj"
                 and get_word_by_id(word.head, sentence).deprel == "advcl"
             )
+            or word.deprel == "parataxis"
         )
         and word_features["VerbForm"] == "Part"
-        and not is_head_of_preposition(word, sentence)
+        and not is_head_of_preposition(
+            word, sentence
+        )  # avoid gerund in adverbial clause
+        and not (
+            word.deprel == "conj"
+            and is_head_of_preposition(get_word_by_id(word.head, sentence), sentence)
+        )  # avoid gerund in conjunction to something in adverbial clause
         and not is_head_of_be(word, sentence)  # avoid progressive
     )
 
